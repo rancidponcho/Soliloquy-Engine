@@ -1,13 +1,25 @@
-CFLAGS = -std=c++17 -O2
+CFLAGS = -std=c++17 -O2 -g
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
-SolEngine: *.cpp *.hpp
-	g++ $(CFLAGS) -o SolEngine *.cpp $(LDFLAGS)
+GLSLC = ~/dev/tools/glslc
+vertSrc = $(wildcard shaders/*.vert)
+vertObj = $(patsubst %.vert, %.vert.spv, $(vertSrc))
+fragSrc = $(wildcard shaders/*.frag)
+fragObj = $(patsubst %.frag, %.frag.spv, $(fragSrc))
+
+TARGET = SolEngine
+$(TARGET): $(vertObj) $(fragObj)
+$(TARGET): *.cpp *.hpp
+	g++ $(CFLAGS) -o $(TARGET) *.cpp $(LDFLAGS)
+
+%.spv: %
+	$(GLSLC) $< -o $@
 
 .PHONY: test clean
 
-test: SolEngine
-	./SolEngine
+test: $(TARGET)
+	./$(TARGET)
 
 clean:
-	rm -f SolEngine
+	rm -f $(TARGET)
+	rm -f shaders/*.spv

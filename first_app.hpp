@@ -1,8 +1,8 @@
 #pragma once
 
 #include "sve_device.hpp"
-#include "sve_pipeline.hpp"
-#include "sve_swap_chain.hpp"
+#include "sve_game_object.hpp"
+#include "sve_renderer.hpp"
 #include "sve_window.hpp"
 
 // std
@@ -24,17 +24,13 @@ class FirstApp {
     void run();
 
    private:
-   void createPipelineLayout();
-   void createPipeline();
-   void createCommandBuffers();
-   void drawFrame();
+    void loadGameObjects();
 
-    SveWindow sveWindow{WIDTH, HEIGHT, "Hello Vulkan!"};
+    SveWindow sveWindow{WIDTH, HEIGHT, "Soliloquy"};
     SveDevice sveDevice{sveWindow};
-    SveSwapChain sveSwapChain{sveDevice, sveWindow.getExtent()};
-    std::unique_ptr<SvePipeline> svePipeline;
-    VkPipelineLayout pipelineLayout;
-    std::vector<VkCommandBuffer> commandBuffers;
+    SveRenderer sveRenderer{sveWindow, sveDevice};
+
+    std::vector<SveGameObject> gameObjects;
 };
 
 }  // namespace sve
