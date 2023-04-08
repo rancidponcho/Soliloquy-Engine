@@ -1,6 +1,7 @@
 #include "first_app.hpp"
 
 #include "simple_render_system.hpp"
+#include "sve_camera.hpp"
 
 // libs
 #define GLM_FORCE_RADIANS
@@ -21,9 +22,14 @@ FirstApp::~FirstApp() {}
 
 void FirstApp::run() {
     SimpleRenderSystem simpleRenderSystem{sveDevice, sveRenderer.getSwapChainRenderPass()};
+    SveCamera camera{};
 
     while (!sveWindow.shouldClose()) {
         glfwPollEvents();
+
+        float aspect = sveRenderer.getAspectRatio();  // prevent resize warping
+        // camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
+        camera.setPerspectiveProjection(glm::pi<float>() / 4.f, aspect, .1f, 10.f);
 
         if (auto commandBuffer = sveRenderer.beginFrame()) {
             // begin offscreen shadow pass
@@ -31,7 +37,7 @@ void FirstApp::run() {
             // end offscreen shadow pass
 
             sveRenderer.beginSwapChainRenderPass(commandBuffer);
-            simpleRenderSystem.renderGameObjects(commandBuffer, gameObjects);
+            simpleRenderSystem.renderGameObjects(commandBuffer, gameObjects, camera);
             sveRenderer.endSwapChainRenderPass(commandBuffer);
             sveRenderer.endFrame();
         }
@@ -103,7 +109,7 @@ void FirstApp::loadGameObjects() {
 
     auto cube = SveGameObject::createGameObject();
     cube.model = sveModel;
-    cube.transform.translation = {0.0f, 0.0f, 0.5f};
+    cube.transform.translation = {0.0f, 0.0f, 2.5f};
     cube.transform.scale = {.5f, .5f, .5f};
     gameObjects.push_back(std::move(cube));
 }

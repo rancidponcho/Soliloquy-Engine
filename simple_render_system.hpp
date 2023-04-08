@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sve_camera.hpp"
 #include "sve_device.hpp"
 #include "sve_game_object.hpp"
 #include "sve_pipeline.hpp"
@@ -19,7 +20,7 @@ class SimpleRenderSystem {
     SimpleRenderSystem(const SimpleRenderSystem &) = delete;
     SimpleRenderSystem &operator=(const SimpleRenderSystem &) = delete;
 
-    void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<SveGameObject> &gameObjects);
+    void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<SveGameObject> &gameObjects, const SveCamera &camera);
 
    private:
     void createPipelineLayout();
