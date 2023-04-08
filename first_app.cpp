@@ -39,21 +39,73 @@ void FirstApp::run() {
     vkDeviceWaitIdle(sveDevice.device());
 }
 
-void FirstApp::loadGameObjects() {
+// temporary helper function, creates a 1x1x1 cube centered at offset
+std::unique_ptr<SveModel> createCubeModel(SveDevice& device, glm::vec3 offset) {
     std::vector<SveModel::Vertex> vertices{
-        {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.0f, -0.5f}, {0.0f, 0.0f, 1.0f}}};
-    auto sveModel = std::make_shared<SveModel>(sveDevice, vertices);
 
-    auto triangle = SveGameObject::createGameObject();
-    triangle.model = sveModel;
-    triangle.color = {.1f, .8f, .1f};
-    triangle.transform2d.translation.x = .2f;
-    triangle.transform2d.scale = {2.f, .5f};
-    triangle.transform2d.rotation = .25f * glm::two_pi<float>();
+        // left face (white)
+        {{-.5f, -.5f, -.5f}, {.9f, .9f, .9f}},
+        {{-.5f, .5f, .5f}, {.9f, .9f, .9f}},
+        {{-.5f, -.5f, .5f}, {.9f, .9f, .9f}},
+        {{-.5f, -.5f, -.5f}, {.9f, .9f, .9f}},
+        {{-.5f, .5f, -.5f}, {.9f, .9f, .9f}},
+        {{-.5f, .5f, .5f}, {.9f, .9f, .9f}},
 
-    gameObjects.push_back(std::move(triangle));  // defaulted move operator in SveGameObject
+        // right face (yellow)
+        {{.5f, -.5f, -.5f}, {.8f, .8f, .1f}},
+        {{.5f, .5f, .5f}, {.8f, .8f, .1f}},
+        {{.5f, -.5f, .5f}, {.8f, .8f, .1f}},
+        {{.5f, -.5f, -.5f}, {.8f, .8f, .1f}},
+        {{.5f, .5f, -.5f}, {.8f, .8f, .1f}},
+        {{.5f, .5f, .5f}, {.8f, .8f, .1f}},
+
+        // top face (orange, remember y axis points down)
+        {{-.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+        {{.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+        {{-.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+        {{-.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+        {{.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+        {{.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+
+        // bottom face (red)
+        {{-.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+        {{.5f, .5f, .5f}, {.8f, .1f, .1f}},
+        {{-.5f, .5f, .5f}, {.8f, .1f, .1f}},
+        {{-.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+        {{.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+        {{.5f, .5f, .5f}, {.8f, .1f, .1f}},
+
+        // nose face (blue)
+        {{-.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+        {{.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+        {{-.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+        {{-.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+        {{.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+        {{.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+
+        // tail face (green)
+        {{-.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+        {{.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+        {{-.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+        {{-.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+        {{.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+        {{.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+
+    };
+    for (auto& v : vertices) {
+        v.position += offset;
+    }
+    return std::make_unique<SveModel>(device, vertices);
+}
+
+void FirstApp::loadGameObjects() {
+    std::shared_ptr<SveModel> sveModel = createCubeModel(sveDevice, {.0f, .0f, .0f});
+
+    auto cube = SveGameObject::createGameObject();
+    cube.model = sveModel;
+    cube.transform.translation = {0.0f, 0.0f, 0.5f};
+    cube.transform.scale = {.5f, .5f, .5f};
+    gameObjects.push_back(std::move(cube));
 }
 
 }  // namespace sve
