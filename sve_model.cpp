@@ -46,7 +46,7 @@ std::vector<VkVertexInputBindingDescription> SveModel::Vertex::getBindingDescrip
     return {{0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX}};
 }
 
-std::vector<VkVertexInputAttributeDescription> SveModel::Vertex::getAttributeDescriptions() {
+std::vector<VkVertexInputAttributeDescription> SveModel::Vertex::getAttributeDescriptions() {           
     // binding, location, format, offset
     return {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},

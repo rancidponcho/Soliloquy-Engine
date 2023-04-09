@@ -23,6 +23,7 @@ FirstApp::~FirstApp() {}
 void FirstApp::run() {
     SimpleRenderSystem simpleRenderSystem{sveDevice, sveRenderer.getSwapChainRenderPass()};
     SveCamera camera{};
+    camera.setViewTarget(glm::vec3(.3f), glm::vec3(0.f, 0.f, 2.5f));
 
     while (!sveWindow.shouldClose()) {
         glfwPollEvents();
@@ -32,10 +33,6 @@ void FirstApp::run() {
         camera.setPerspectiveProjection(glm::pi<float>() / 4.f, aspect, .1f, 10.f);
 
         if (auto commandBuffer = sveRenderer.beginFrame()) {
-            // begin offscreen shadow pass
-            // render shadow casting objects
-            // end offscreen shadow pass
-
             sveRenderer.beginSwapChainRenderPass(commandBuffer);
             simpleRenderSystem.renderGameObjects(commandBuffer, gameObjects, camera);
             sveRenderer.endSwapChainRenderPass(commandBuffer);
