@@ -379,12 +379,12 @@ VkSurfaceFormatKHR SveSwapChain::chooseSwapSurfaceFormat(
 
 VkPresentModeKHR SveSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
     /* Mailbox present mode for low latency. High power consumption and not always supported */
-    // for (const auto &availablePresentMode : availablePresentModes) {
-    //     if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-    //         std::cout << "Present mode: Mailbox" << std::endl;
-    //         return availablePresentMode;
-    //     }
-    // }
+    for (const auto &availablePresentMode : availablePresentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            std::cout << "Present mode: Mailbox" << std::endl;
+            return availablePresentMode;
+        }
+    }
 
     /* Immediate present mode for low latency. High power consumption and tearing. Usually supported */
     // for (const auto &availablePresentMode : availablePresentModes) {

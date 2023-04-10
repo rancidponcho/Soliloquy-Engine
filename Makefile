@@ -1,7 +1,9 @@
-CFLAGS = -std=c++17 -O2 -g
+CFLAGS = -std=c++17 -O2 -g -I$(TINYOBJ_PATH)
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 GLSLC = ~/dev/tools/glslc
+TINYOBJ_PATH = /home/rancidponcho/dev/tools/tinyobjloader
+
 vertSrc = $(wildcard shaders/*.vert)
 vertObj = $(patsubst %.vert, %.vert.spv, $(vertSrc))
 fragSrc = $(wildcard shaders/*.frag)
