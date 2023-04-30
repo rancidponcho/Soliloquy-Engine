@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sve_descriptors.hpp"
 #include "sve_device.hpp"
 #include "sve_game_object.hpp"
 #include "sve_renderer.hpp"
@@ -30,7 +31,9 @@ class FirstApp {
     SveDevice sveDevice{sveWindow};
     SveRenderer sveRenderer{sveWindow, sveDevice};
 
-    std::vector<SveGameObject> gameObjects;
+    // note: order of declarations matters
+    std::unique_ptr<SveDescriptorPool> globalPool{};
+    SveGameObject::Map gameObjects;
 };
 
 }  // namespace sve

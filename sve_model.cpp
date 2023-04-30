@@ -16,6 +16,7 @@
 
 namespace std {
 
+// hash for Vertex struct so it can be used as a key in an unordered map
 template <>
 struct hash<sve::SveModel::Vertex> {
     size_t operator()(sve::SveModel::Vertex const& vertex) const {
@@ -34,20 +35,11 @@ SveModel::SveModel(SveDevice& device, const SveModel::Builder& builder) : sveDev
     createIndexBuffers(builder.indices);
 }
 
-SveModel::~SveModel() {
-    vkDestroyBuffer(sveDevice.device(), vertexBuffer, nullptr);
-    vkFreeMemory(sveDevice.device(), vertexBufferMemory, nullptr);
-
-    if (hasIndexbuffer) {
-        vkDestroyBuffer(sveDevice.device(), indexBuffer, nullptr);
-        vkFreeMemory(sveDevice.device(), indexBufferMemory, nullptr);
-    }
-}
+SveModel::~SveModel() {}
 
 std::unique_ptr<SveModel> SveModel::createModelFromFile(SveDevice& device, const std::string& path) {
     Builder builder{};
     builder.loadModel(path);
-    std::cout << "Loaded model: " << path << std::endl;
     std::cout << "Vertex count: " << builder.vertices.size() << std::endl;
     return std::make_unique<SveModel>(device, builder);
 }
@@ -56,32 +48,27 @@ void SveModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
     vertexCount = static_cast<uint32_t>(vertices.size());
     assert(vertexCount >= 3 && "Vertex count must be at least 3.");
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
+    uint32_t vertexStride = sizeof(vertices[0]);
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    sveDevice.createBuffer(
-        bufferSize,
+    SveBuffer stagingBuffer{
+        sveDevice,
+        vertexStride,
+        vertexCount,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory);
+    };
 
-    void* data;
-    vkMapMemory(sveDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(sveDevice.device(), stagingBufferMemory);
+    stagingBuffer.map();
+    stagingBuffer.writeToBuffer((void*)vertices.data());
 
-    sveDevice.createBuffer(
-        bufferSize,
+    vertexBuffer = std::make_unique<SveBuffer>(
+        sveDevice,
+        vertexStride,
+        vertexCount,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        vertexBuffer,
-        vertexBufferMemory);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    sveDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-    vkDestroyBuffer(sveDevice.device(), stagingBuffer, nullptr);
-    vkFreeMemory(sveDevice.device(), stagingBufferMemory, nullptr);
+    sveDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 }
 
 void SveModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
@@ -91,32 +78,27 @@ void SveModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
     hasIndexbuffer = true;
     indexCount = static_cast<uint32_t>(indices.size());
     VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
+    uint32_t indexStride = sizeof(indices[0]);
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    sveDevice.createBuffer(
-        bufferSize,
+    SveBuffer stagingBuffer{
+        sveDevice,
+        indexStride,
+        indexCount,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory);
+    };
 
-    void* data;
-    vkMapMemory(sveDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(sveDevice.device(), stagingBufferMemory);
+    stagingBuffer.map();
+    stagingBuffer.writeToBuffer((void*)indices.data());
 
-    sveDevice.createBuffer(
-        bufferSize,
+    indexBuffer = std::make_unique<SveBuffer>(
+        sveDevice,
+        indexStride,
+        indexCount,
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        indexBuffer,
-        indexBufferMemory);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    sveDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-    vkDestroyBuffer(sveDevice.device(), stagingBuffer, nullptr);
-    vkFreeMemory(sveDevice.device(), stagingBufferMemory, nullptr);
+    sveDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
 }
 
 void SveModel::draw(VkCommandBuffer commandBuffer) {
@@ -128,12 +110,12 @@ void SveModel::draw(VkCommandBuffer commandBuffer) {
 }
 
 void SveModel::bind(VkCommandBuffer commandBuffer) {
-    VkBuffer buffers[] = {vertexBuffer};
+    VkBuffer buffers[] = {vertexBuffer->getBuffer()};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
     if (hasIndexbuffer) {
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);  // 32 bit indices => | 2^16 -1 = 65535 | 2^32 -1 = 4294967295 | 2^64 -1 = 18446744073709551615 | etc...
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);  // 32 bit indices => | 2^16 -1 = 65535 | 2^32 -1 = 4294967295 | 2^64 -1 = 18446744073709551615 | etc...
     }
 }
 
@@ -142,16 +124,19 @@ std::vector<VkVertexInputBindingDescription> SveModel::Vertex::getBindingDescrip
 }
 
 std::vector<VkVertexInputAttributeDescription> SveModel::Vertex::getAttributeDescriptions() {
-    // binding, location, format, offset
     return {
+        // binding, location, format, offset
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},
         {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)},
+        {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)},
+        {3, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)},
     };
 }
 
+// TONY OBJ LOADER
 void SveModel::Builder::loadModel(const std::string& path) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
+    tinyobj::attrib_t attrib;              // vertex data (position, color, normal, texture)
+    std::vector<tinyobj::shape_t> shapes;  // index values for each face element
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
@@ -162,46 +147,45 @@ void SveModel::Builder::loadModel(const std::string& path) {
     vertices.clear();
     indices.clear();
 
-    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+    // Set vertex data
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};  // to avoid duplicate vertices
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
             Vertex vertex{};
 
             if (index.vertex_index >= 0) {
+                // POSITION
                 vertex.position = {
                     attrib.vertices[3 * index.vertex_index + 0],
                     attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2],
                 };
 
-                // set color
-                auto colorIndex = 3 * index.vertex_index + 2;
-                if (colorIndex < attrib.colors.size()) {
-                    vertex.color = {
-                        attrib.colors[colorIndex - 2],
-                        attrib.colors[colorIndex - 1],
-                        attrib.colors[colorIndex - 0],
-                    };
-                } else {
-                    vertex.color = {1.f, 1.f, 1.f};  // default color
-                }
+                // COLOR
+                vertex.color = {
+                    attrib.colors[3 * index.vertex_index + 0],
+                    attrib.colors[3 * index.vertex_index + 1],
+                    attrib.colors[3 * index.vertex_index + 2],
+                };
             }
-
+            // set normals
             if (index.normal_index >= 0) {
                 vertex.normal = {
-                    attrib.normals[3 * index.vertex_index + 0],
-                    attrib.normals[3 * index.vertex_index + 1],
-                    attrib.normals[3 * index.vertex_index + 2],
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2],
                 };
             }
 
+            // set UV texture coordinates
             if (index.texcoord_index >= 0) {
                 vertex.uv = {
-                    attrib.texcoords[2 * index.vertex_index + 0],
-                    1.0f - attrib.texcoords[2 * index.vertex_index + 1],
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    attrib.texcoords[2 * index.texcoord_index + 1],
                 };
             }
 
+            // check if vertex is unique
             if (uniqueVertices.count(vertex) == 0) {
                 uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
                 vertices.push_back(vertex);

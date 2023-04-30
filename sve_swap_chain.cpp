@@ -381,7 +381,6 @@ VkPresentModeKHR SveSwapChain::chooseSwapPresentMode(const std::vector<VkPresent
     /* Mailbox present mode for low latency. High power consumption and not always supported */
     for (const auto &availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            std::cout << "Present mode: Mailbox" << std::endl;
             return availablePresentMode;
         }
     }
@@ -395,7 +394,6 @@ VkPresentModeKHR SveSwapChain::chooseSwapPresentMode(const std::vector<VkPresent
     // }
 
     /* Default: FIFO present mode for mobile. Always supported but poor latency */
-    std::cout << "Present mode: V-Sync" << std::endl;
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 

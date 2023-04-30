@@ -2,6 +2,7 @@
 
 #include "sve_camera.hpp"
 #include "sve_device.hpp"
+#include "sve_frame_info.hpp"
 #include "sve_game_object.hpp"
 #include "sve_pipeline.hpp"
 #include "sve_renderer.hpp"
@@ -14,16 +15,16 @@
 namespace sve {
 class SimpleRenderSystem {
    public:
-    SimpleRenderSystem(SveDevice &device, VkRenderPass renderPass);
+    SimpleRenderSystem(SveDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
     ~SimpleRenderSystem();
 
     SimpleRenderSystem(const SimpleRenderSystem &) = delete;
     SimpleRenderSystem &operator=(const SimpleRenderSystem &) = delete;
 
-    void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<SveGameObject> &gameObjects, const SveCamera &camera);
+    void renderGameObjects(FrameInfo &frameInfo);
 
    private:
-    void createPipelineLayout();
+    void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
     void createPipeline(VkRenderPass renderPass);
 
     SveDevice &sveDevice;

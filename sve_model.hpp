@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sve_buffer.hpp"
 #include "sve_device.hpp"
 
 // libs
@@ -53,13 +54,11 @@ class SveModel {
 
     SveDevice &sveDevice;
 
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
+    std::unique_ptr<SveBuffer> vertexBuffer;
     uint32_t vertexCount;
 
     bool hasIndexbuffer = false;
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    std::unique_ptr<SveBuffer> indexBuffer;
     uint32_t indexCount;
 };
 
